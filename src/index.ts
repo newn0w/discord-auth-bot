@@ -1,6 +1,7 @@
 import { Client, GatewayIntentBits, Collection, PresenceUpdateStatus, Partials,} from "discord.js";
 import CG from './config';
 import { getType } from "./functions";
+import { PrismaClient } from '@prisma/client';
 const { Guilds, MessageContent, GuildMessages, GuildMembers, GuildVoiceStates } = GatewayIntentBits
 const client = new Client({
     presence:{ 
@@ -27,6 +28,8 @@ import { config } from "dotenv";
 import { readdirSync } from "fs";
 import { join } from "path";
 config()
+
+const prisma = new PrismaClient();
 
 client.slashCommands = new Collection<string, SlashCommand>()
 client.commands = new Collection<string, Command>()

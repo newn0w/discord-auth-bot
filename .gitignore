@@ -4,6 +4,7 @@ build
 .env.*
 .vscode
 test
+.idea/
 logs/
 *.log
 npm-debug.log*
@@ -12,3 +13,9 @@ pids
 *.seed
 *.pid.lock
 coverage/
+prisma/*.db
+prisma/*.db-journal
+*.sqlite
+database/*.db
+database/*.db-journal
+tsconfig.tsbuildinfo
