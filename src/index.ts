@@ -2,9 +2,10 @@ import { Client, GatewayIntentBits, Collection, PresenceUpdateStatus, Partials,}
 import CG from './config';
 import { getType } from "./functions";
 import { PrismaClient } from '@prisma/client';
+import { createLandingChannel } from "./utils/createLandingChannel";
 const { Guilds, MessageContent, GuildMessages, GuildMembers, GuildVoiceStates } = GatewayIntentBits
 const client = new Client({
-    presence:{ 
+    presence:{
         activities: [
             {
                 name: CG.PRESENCE.text,
@@ -39,6 +40,19 @@ const handlersDir = join(__dirname, "./handlers")
 readdirSync(handlersDir).forEach(handler => {
     require(`${handlersDir}/${handler}`)(client)
 })
+
+// Attempt to create the landing channel upon bot startup
+client.on('ready', async () => {
+    const guilds = client.guilds.cache.values();
+
+    for (const guild of guilds) {
+        const landingChannel = await createLandingChannel(guild);
+        if (landingChannel) {
+            await landingChannel.send("Welcome to the server!");
+        }
+    }
+
+});
 
 client.login(process.env.TOKEN)
 /*
