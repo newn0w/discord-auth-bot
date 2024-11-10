@@ -1,7 +1,14 @@
-import {SlashCommandBuilder, CommandInteraction, ChatInputCommandInteraction} from 'discord.js';
+import {
+    SlashCommandBuilder,
+    CommandInteraction,
+    ChatInputCommandInteraction,
+    Role,
+    GuildMemberRoleManager, InteractionReplyOptions
+} from 'discord.js';
 import { SlashCommand } from '../types';
 import { sendVerificationEmail, generateVerificationCode } from "../services/mailerService";
 import { PrismaClient } from '@prisma/client';
+import {UnverifiedRoleName, VerifiedRoleName} from "../constants/roles";
 
 const prisma = new PrismaClient;
 
@@ -75,13 +82,15 @@ const VerifyCommand: SlashCommand = {
                 await sendVerificationEmail(email, verificationCode);
                 await interaction.reply({ content: 'Email sent!', ephemeral: true });
             } else if (subcommand === 'code') {
+                await interaction.deferReply();
+
                 const code = interaction.options.getString('code', true);
                 const user = await prisma.user.findUnique({ where: { discordId: interaction.user.id } });
                 const expirationDate = user?.codeExpiresAt ? new Date(user.codeExpiresAt) : new Date(0);
 
                 if (!user || user.verificationCode !== code || expirationDate < new Date()) {
                     // Invalid code, respond with error message
-                    await interaction.reply({ content: 'Invalid or expired code!', ephemeral: true });
+                    await interaction.editReply({ content: 'Invalid or expired code!', ephemeral: true } as InteractionReplyOptions);
                     return;
                 }
 
@@ -91,9 +100,33 @@ const VerifyCommand: SlashCommand = {
                     data: { verified: true }
                 });
 
-                // TODO: Assign verified role
+                // Assign verified role
+                const guild = interaction.guild;
+                const member = interaction.member;
 
-                await interaction.reply({ content: 'Verified successfully!', ephemeral: true});
+                if (!guild || !member) {
+                    await interaction.editReply({ content: 'Guild not found', ephemeral: true } as InteractionReplyOptions);
+                    return;
+                }
+
+                const verifiedRole = interaction.guild.roles.cache.find(
+                    (role: Role) => role.name === VerifiedRoleName
+                );
+                const unverifiedRole = interaction.guild.roles.cache.find(
+                    (role: Role) => role.name === UnverifiedRoleName
+                );
+
+                if (!verifiedRole || !unverifiedRole) {
+                    await interaction.editReply({ content: 'Roles not configured', ephemeral: true } as InteractionReplyOptions);
+                    return;
+                }
+
+                const roleManager = member.roles as GuildMemberRoleManager;
+                await roleManager.add(verifiedRole);
+                await roleManager.remove(unverifiedRole);
+                await interaction.editReply({ content: 'Verified successfully!', ephemeral: true} as InteractionReplyOptions);
+
+                // TODO: Add spreadsheet integration to set user nicknames
             }
         },
         cooldown: 10,
