@@ -16,10 +16,8 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-export async function sendVerificationEmail(email: string): Promise<boolean> {
+export async function sendVerificationEmail(email: string, code: string): Promise<boolean> {
     try {
-        const code = generateVerificationCode();
-
         const mailOptions = {
             from: emailUser,
             to: email,
@@ -35,6 +33,6 @@ export async function sendVerificationEmail(email: string): Promise<boolean> {
     }
 }
 
-function generateVerificationCode(): string {
+export function generateVerificationCode(): string {
     return Math.random().toString(36).substring(2, 15);
 }

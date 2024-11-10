@@ -10,7 +10,7 @@ datasource db {
 
 model User {
     discordId           String   @id
-    email               String   @unique
+    email               String
     verified            Boolean  @default(false)
     verificationCode    String?
     codeExpiresAt       DateTime?
