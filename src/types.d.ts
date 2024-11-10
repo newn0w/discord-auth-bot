@@ -11,7 +11,7 @@ import mongoose from "mongoose";
 export interface SlashCommand {
   enable: boolean;
   command: SlashCommandBuilder | any;
-  execute: (interaction: CommandInteraction) => void;
+  execute: (interaction: ChatInputCommandInteraction) => void;
   autocomplete?: (interaction: AutocompleteInteraction) => void;
   cooldown?: number; // in seconds
   botPermissions: Array<PermissionResolvable>;

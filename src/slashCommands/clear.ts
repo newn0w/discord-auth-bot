@@ -1,7 +1,7 @@
 import {
-  ChannelType,
-  PermissionFlagsBits,
-  SlashCommandBuilder,
+    ChannelType, Collection, Message,
+    PermissionFlagsBits,
+    SlashCommandBuilder,
 } from "discord.js";
 import { SlashCommand } from "../types";
 
@@ -22,7 +22,7 @@ const ClearCommand: SlashCommand = {
     let messageCount = Number(interaction.options.get("messagecount")?.value);
     interaction.channel?.messages
       .fetch({ limit: messageCount })
-      .then(async (msgs) => {
+      .then(async (msgs: Collection<string, Message>) => {
         if (interaction.channel?.type === ChannelType.DM) return;
         const deletedMessages = await interaction.channel?.bulkDelete(
           msgs,
