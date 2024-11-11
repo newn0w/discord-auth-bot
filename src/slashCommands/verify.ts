@@ -3,7 +3,7 @@ import {
     CommandInteraction,
     ChatInputCommandInteraction,
     Role,
-    GuildMemberRoleManager, InteractionReplyOptions
+    GuildMemberRoleManager, InteractionReplyOptions, GuildMember
 } from 'discord.js';
 import { SlashCommand } from '../types';
 import { sendVerificationEmail, generateVerificationCode } from "../services/mailerService";
@@ -100,6 +100,9 @@ const VerifyCommand: SlashCommand = {
                     data: { verified: true }
                 });
 
+                // Retrieve user's nickname from the database
+                // const nickname = user.nickname; // TODO: Add to schema
+
                 // Assign verified role
                 const guild = interaction.guild;
                 const member = interaction.member;
@@ -120,7 +123,12 @@ const VerifyCommand: SlashCommand = {
 
                 const roleManager = member.roles as GuildMemberRoleManager;
                 await roleManager.add(verifiedRole);
-                await interaction.editReply({ content: 'Verified successfully!', ephemeral: true} as InteractionReplyOptions);
+
+                // Update nickname
+                const guildMember = member as GuildMember;
+                // await guildMember.setNickname(nickname); // TODO: Uncomment once spreadsheet integration is added
+
+                await interaction.editReply({ content: 'Verified successfully!', ephemeral: true } as InteractionReplyOptions);
 
                 // TODO: Add spreadsheet integration to set user nicknames
             }
