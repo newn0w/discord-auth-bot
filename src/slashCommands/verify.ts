@@ -10,9 +10,10 @@ import { sendVerificationEmail, generateVerificationCode } from "../services/mai
 import { PrismaClient } from '@prisma/client';
 import { VerifiedRoleName } from "../constants/roles";
 import { loadSpreadsheet } from "../utils/loadSpreadsheet"
-
+import {GoogleSpreadsheetRow} from "google-spreadsheet";
 
 const prisma = new PrismaClient;
+const sheetId: string = process.env.SHEET_ID!;
 
 const VerifyCommand: SlashCommand = {
     enable: true,
@@ -41,13 +42,28 @@ const VerifyCommand: SlashCommand = {
             const subcommand = interaction.options.getSubcommand();
 
             if (subcommand === 'email') {
+                await interaction.deferReply({ ephemeral: true });
+
                 const email = interaction.options.getString('email', true);
 
                 // Email format validation regex
                 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                 if (!emailRegex.test(email)) {
                     // Invalid email format, respond with error message
-                    await interaction.reply({ content: 'Invalid email format', ephemeral: true });
+                    await interaction.editReply({ content: 'Invalid email format!' });
+                    return;
+                }
+
+                const doc = await loadSpreadsheet(sheetId);
+                const sheet = doc.sheetsByIndex[0];
+                const rows = await sheet.getRows();
+                const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
+                rows.forEach(e => {
+                    const key: string = e.get('Email');
+                    emailTable[key] = e;
+                });
+                if (!(email in emailTable)) {
+                    await interaction.editReply({ content: 'Email not found!' });
                     return;
                 }
 
@@ -82,17 +98,35 @@ const VerifyCommand: SlashCommand = {
 
                 // Send verification email to user
                 await sendVerificationEmail(email, verificationCode);
-                await interaction.reply({ content: 'Email sent!', ephemeral: true });
+                await interaction.editReply({ content: 'Email sent!' });
             } else if (subcommand === 'code') {
-                await interaction.deferReply();
+                await interaction.deferReply({ ephemeral: true });
 
                 const code = interaction.options.getString('code', true);
                 const user = await prisma.user.findUnique({ where: { discordId: interaction.user.id } });
+                const userEmail = user?.email ?? '';
                 const expirationDate = user?.codeExpiresAt ? new Date(user.codeExpiresAt) : new Date(0);
+
+                // Begin getting user data from spreadsheet
+                const doc = await loadSpreadsheet(sheetId);
+                const sheet = doc.sheetsByIndex[0];
+                const rows = await sheet.getRows();
+                const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
+                rows.forEach(e => {
+                    const key: string = e.get('Email');
+                    emailTable[key] = e;
+                });
+                if (!(userEmail in emailTable)) {
+                    await interaction.editReply({ content: 'Email not found!' });
+                    return;
+                }
+                const emailRow = emailTable[userEmail];
+                const nickname = `${emailRow.get('First Name')} ${emailRow.get('Last Name')}`;
+
 
                 if (!user || user.verificationCode !== code || expirationDate < new Date()) {
                     // Invalid code, respond with error message
-                    await interaction.editReply({ content: 'Invalid or expired code!', ephemeral: true } as InteractionReplyOptions);
+                    await interaction.editReply({ content: 'Invalid or expired code!' });
                     return;
                 }
 
@@ -102,15 +136,12 @@ const VerifyCommand: SlashCommand = {
                     data: { verified: true }
                 });
 
-                // Retrieve user's nickname from the database
-                // const nickname = user.nickname; // TODO: Add to schema
-
                 // Assign verified role
                 const guild = interaction.guild;
                 const member = interaction.member;
 
                 if (!guild || !member) {
-                    await interaction.editReply({ content: 'Guild not found', ephemeral: true } as InteractionReplyOptions);
+                    await interaction.editReply({ content: 'Guild not found' });
                     return;
                 }
 
@@ -119,7 +150,7 @@ const VerifyCommand: SlashCommand = {
                 );
 
                 if (!verifiedRole) {
-                    await interaction.editReply({ content: 'Roles not configured', ephemeral: true } as InteractionReplyOptions);
+                    await interaction.editReply({ content: 'Roles not configured' });
                     return;
                 }
 
@@ -128,11 +159,9 @@ const VerifyCommand: SlashCommand = {
 
                 // Update nickname
                 const guildMember = member as GuildMember;
-                // await guildMember.setNickname(nickname); // TODO: Uncomment once spreadsheet integration is added
+                await guildMember.setNickname(nickname);
 
-                await interaction.editReply({ content: 'Verified successfully!', ephemeral: true } as InteractionReplyOptions);
-
-                // TODO: Add spreadsheet integration to set user nicknames
+                await interaction.editReply({ content: 'Verified successfully!' });
             }
         },
         cooldown: 10,
