@@ -9,6 +9,8 @@ import { SlashCommand } from '../types';
 import { sendVerificationEmail, generateVerificationCode } from "../services/mailerService";
 import { PrismaClient } from '@prisma/client';
 import { VerifiedRoleName } from "../constants/roles";
+import { loadSpreadsheet } from "../utils/loadSpreadsheet"
+
 
 const prisma = new PrismaClient;
 
