@@ -27,7 +27,7 @@ export const createLandingChannel = async (guild: Guild): Promise<TextChannel | 
             permissionOverwrites: [
                 {
                     id: guild.id,
-                    deny: [PermissionsBitField.Flags.ViewChannel], // TODO: Give access to "verified" role
+                    allow: [PermissionsBitField.Flags.ViewChannel], // TODO: Give access to "verified" role
                 },
             ],
         });

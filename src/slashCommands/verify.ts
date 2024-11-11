@@ -68,7 +68,7 @@ const VerifyCommand: SlashCommand = {
                 }
 
                 const verificationCode = generateVerificationCode();
-                const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5-minute verification code expiration
+                const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24-hour verification code expiration
                 const existingUser = await prisma.user.findUnique(
                     { where: { discordId: interaction.user.id } }
                 );
