@@ -8,7 +8,7 @@ import {
 import { SlashCommand } from '../types';
 import { sendVerificationEmail, generateVerificationCode } from "../services/mailerService";
 import { PrismaClient } from '@prisma/client';
-import {UnverifiedRoleName, VerifiedRoleName} from "../constants/roles";
+import { VerifiedRoleName } from "../constants/roles";
 
 const prisma = new PrismaClient;
 
@@ -112,18 +112,14 @@ const VerifyCommand: SlashCommand = {
                 const verifiedRole = interaction.guild.roles.cache.find(
                     (role: Role) => role.name === VerifiedRoleName
                 );
-                const unverifiedRole = interaction.guild.roles.cache.find(
-                    (role: Role) => role.name === UnverifiedRoleName
-                );
 
-                if (!verifiedRole || !unverifiedRole) {
+                if (!verifiedRole) {
                     await interaction.editReply({ content: 'Roles not configured', ephemeral: true } as InteractionReplyOptions);
                     return;
                 }
 
                 const roleManager = member.roles as GuildMemberRoleManager;
                 await roleManager.add(verifiedRole);
-                await roleManager.remove(unverifiedRole);
                 await interaction.editReply({ content: 'Verified successfully!', ephemeral: true} as InteractionReplyOptions);
 
                 // TODO: Add spreadsheet integration to set user nicknames

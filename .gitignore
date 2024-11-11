@@ -19,3 +19,4 @@ prisma/*.db-journal
 database/*.db
 database/*.db-journal
 tsconfig.tsbuildinfo
+config/

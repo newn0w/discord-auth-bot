@@ -1,9 +1,18 @@
-import {Client, GatewayIntentBits, Collection, PresenceUpdateStatus, Partials, Role, Guild,} from "discord.js";
+import {
+    Client,
+    GatewayIntentBits,
+    Collection,
+    PresenceUpdateStatus,
+    Partials,
+    Role,
+    Guild,
+    TextChannel,
+} from "discord.js";
 import CG from './config';
 import { getType } from "./functions";
 import { PrismaClient } from '@prisma/client';
 import { createLandingChannel } from "./utils/createLandingChannel";
-import { VerifiedRoleName, UnverifiedRoleName } from './constants/roles';
+import { VerifiedRoleName } from './constants/roles';
 const { Guilds, MessageContent, GuildMessages, GuildMembers, GuildVoiceStates } = GatewayIntentBits
 const client = new Client({
     presence:{
@@ -49,7 +58,6 @@ client.on('ready', async () => {
     for (const guild of guilds) {
         const landingChannel = await createLandingChannel(guild);
         await createVerifiedRole(guild);
-        await createUnverifiedRole(guild);
         if (landingChannel) {
             await landingChannel.send("Welcome to the server!");
         }
@@ -64,24 +72,21 @@ async function createVerifiedRole(guild: Guild) {
         (role: Role) => role.name === VerifiedRoleName
     );
     if (!existingRole) {
-        await guild.roles.create({
+        const newRole = await guild.roles.create({
             name: VerifiedRoleName,
             color: '#00FF00',
             permissions: ['ViewChannel', 'SendMessages'],
         });
-    }
-}
 
-async function createUnverifiedRole(guild: Guild) {
-    const existingRole = guild.roles.cache.find(
-        (role: Role) => role.name === UnverifiedRoleName
-    );
-    if (!existingRole) {
-        await guild.roles.create({
-            name: UnverifiedRoleName,
-            color: '#FF0000',
-            permissions: ['ViewChannel'],
-        });
+        // Deny view access to landing channel
+        const landingChannel = guild.channels.cache.find(
+            channel => channel.name === 'verify-here'
+        ) as TextChannel;
+        if (landingChannel) {
+            await landingChannel.permissionOverwrites.edit(newRole.id, {
+                ViewChannel: false,
+            });
+        }
     }
 }
 /*
