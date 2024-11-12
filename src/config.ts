@@ -12,13 +12,10 @@ const config = {
   secColor: "#FE6E10",
   errorColor: "#FF2222",
   
-  supportServer: 'discord.gg/FMbXwGPJGm',
+  supportServer: 'discord.gg/cXQ4u5kW',
 
   PRESENCE:{
-    text: 'By: NoBody#9666',
-    // Activity type for the bot ["COMPETING" | "LISTENING" | "PLAYING" | "WATCHING" | "STREAMING"]
-    //! Keep in mind that if Streaming is chosen, you must configure the url in the index.ts
-    type: 'WATCHING',
+    
   }
   
 

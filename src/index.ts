@@ -15,15 +15,15 @@ import { createLandingChannel } from "./utils/createLandingChannel";
 import { VerifiedRoleName } from './constants/roles';
 const { Guilds, MessageContent, GuildMessages, GuildMembers, GuildVoiceStates } = GatewayIntentBits
 const client = new Client({
-    presence:{
-        activities: [
-            {
-                name: CG.PRESENCE.text,
-                type: getType(CG.PRESENCE.type),
-            }
-        ],
-        status: PresenceUpdateStatus.Online,
-    },
+    // presence:{
+    //     activities: [
+    //         {
+    //             name: CG.PRESENCE.text,
+    //             type: getType(CG.PRESENCE.type),
+    //         }
+    //     ],
+    //     status: PresenceUpdateStatus.Online,
+    // },
     intents:[
         Guilds,
         MessageContent,
