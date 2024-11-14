@@ -34,5 +34,5 @@ export async function sendVerificationEmail(email: string, code: string): Promis
 }
 
 export function generateVerificationCode(): string {
-    return Math.random().toString(36).substring(2, 15);
+    return Math.random().toString().slice(2, 8);
 }
