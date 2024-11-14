@@ -159,9 +159,10 @@ const VerifyCommand: SlashCommand = {
 
                 // Update nickname
                 const guildMember = member as GuildMember;
-                await guildMember.setNickname(nickname);
+                let finalReplyText = 'Verified successfully!';
+                await guildMember.setNickname(nickname).catch(() => finalReplyText = 'Verified successfully! Unable to edit nickname.');
 
-                await interaction.editReply({ content: 'Verified successfully!' });
+                await interaction.editReply({ content: finalReplyText });
             }
         },
         cooldown: 10,
