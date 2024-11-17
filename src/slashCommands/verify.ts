@@ -39,130 +39,142 @@ const VerifyCommand: SlashCommand = {
             )
         ),
         execute: async (interaction: ChatInputCommandInteraction) => {
-            const subcommand = interaction.options.getSubcommand();
+            try {
+                const subcommand = interaction.options.getSubcommand();
 
-            if (subcommand === 'email') {
-                await interaction.deferReply({ ephemeral: true });
+                if (subcommand === 'email') {
+                    await interaction.deferReply({ ephemeral: true });
 
-                const email = interaction.options.getString('email', true);
+                    const email = interaction.options.getString('email', true);
+                    console.log(`verify email ${email} submitted.`)
+                    // Email format validation regex
+                    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                    if (!emailRegex.test(email)) {
+                        // Invalid email format, respond with error message
+                        console.log(`email ${email} was found to have invalid formatting`)
+                        await interaction.editReply({ content: 'Invalid email format!' });
+                        return;
+                    }
 
-                // Email format validation regex
-                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                if (!emailRegex.test(email)) {
-                    // Invalid email format, respond with error message
-                    await interaction.editReply({ content: 'Invalid email format!' });
-                    return;
-                }
+                    const doc = await loadSpreadsheet(sheetId);
+                    const sheet = doc.sheetsByIndex[0];
+                    const rows = await sheet.getRows();
+                    console.log(`spreadsheet loaded`);
+                    const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
+                    rows.forEach(e => {
+                        const key: string = e.get('Email');
+                        emailTable[key] = e;
+                    });
+                    if (!(email in emailTable)) {
+                        console.log(`email ${email} not found in email table`);
+                        await interaction.editReply({ content: 'Email not found!' });
+                        return;
+                    }
 
-                const doc = await loadSpreadsheet(sheetId);
-                const sheet = doc.sheetsByIndex[0];
-                const rows = await sheet.getRows();
-                const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
-                rows.forEach(e => {
-                    const key: string = e.get('Email');
-                    emailTable[key] = e;
-                });
-                if (!(email in emailTable)) {
-                    await interaction.editReply({ content: 'Email not found!' });
-                    return;
-                }
+                    const verificationCode = generateVerificationCode();
+                    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24-hour verification code expiration
+                    const existingUser = await prisma.user.findUnique(
+                        { where: { discordId: interaction.user.id } }
+                    );
 
-                const verificationCode = generateVerificationCode();
-                const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24-hour verification code expiration
-                const existingUser = await prisma.user.findUnique(
-                    { where: { discordId: interaction.user.id } }
-                );
+                    // Update or create user database entry
+                    if (existingUser) {
+                        // Update existing user database entry with new verification details
+                        await prisma.user.update({
+                            where: { discordId: interaction.user.id },
+                            data: {
+                                email,
+                                verificationCode,
+                                codeExpiresAt: expiresAt
+                            }
+                        });
+                    } else {
+                        // Create new user database entry
+                        await prisma.user.create({
+                            data: {
+                                discordId: interaction.user.id,
+                                email,
+                                verificationCode,
+                                codeExpiresAt: expiresAt
+                            }
+                        });
+                    }
 
-                // Update or create user database entry
-                if (existingUser) {
-                    // Update existing user database entry with new verification details
+                    // Send verification email to user
+                    await sendVerificationEmail(email, verificationCode);
+                    await interaction.editReply({ content: 'Email sent!' });
+                } else if (subcommand === 'code') {
+                    console.log(`verify code command submitted by user ${interaction.user.username} ${interaction.user.id}`)
+                    await interaction.deferReply({ ephemeral: true });
+
+                    const code = interaction.options.getString('code', true);
+                    console.log(`code submitted: ${code}`);
+                    const user = await prisma.user.findUnique({ where: { discordId: interaction.user.id } });
+                    const userEmail = user?.email ?? '';
+                    const expirationDate = user?.codeExpiresAt ? new Date(user.codeExpiresAt) : new Date(0);
+
+                    // Begin getting user data from spreadsheet
+                    const doc = await loadSpreadsheet(sheetId);
+                    const sheet = doc.sheetsByIndex[0];
+                    const rows = await sheet.getRows();
+                    const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
+                    rows.forEach(e => {
+                        const key: string = e.get('Email');
+                        emailTable[key] = e;
+                    });
+                    if (!(userEmail in emailTable)) {
+                        await interaction.editReply({ content: 'Email not found!' });
+                        return;
+                    }
+                    const emailRow = emailTable[userEmail];
+                    const nickname = `${emailRow.get('First Name')} ${emailRow.get('Last Name')}`;
+
+
+                    if (!user || user.verificationCode !== code || expirationDate < new Date()) {
+                        // Invalid code, respond with error message
+                        await interaction.editReply({ content: 'Invalid or expired code!' });
+                        return;
+                    }
+
+                    // Update user verification status
                     await prisma.user.update({
                         where: { discordId: interaction.user.id },
-                        data: {
-                            email,
-                            verificationCode,
-                            codeExpiresAt: expiresAt
-                        }
+                        data: { verified: true }
                     });
-                } else {
-                    // Create new user database entry
-                    await prisma.user.create({
-                        data: {
-                            discordId: interaction.user.id,
-                            email,
-                            verificationCode,
-                            codeExpiresAt: expiresAt
-                        }
-                    });
+
+                    // Assign verified role
+                    const guild = interaction.guild;
+                    const member = interaction.member;
+
+                    if (!guild || !member) {
+                        await interaction.editReply({ content: 'Guild not found' });
+                        return;
+                    }
+
+                    const verifiedRole = interaction.guild.roles.cache.find(
+                        (role: Role) => role.name === VerifiedRoleName
+                    );
+
+                    if (!verifiedRole) {
+                        await interaction.editReply({ content: 'Roles not configured' });
+                        return;
+                    }
+                    console.log(`attempting to assign verified role to user..`);
+                    const roleManager = member.roles as GuildMemberRoleManager;
+                    await roleManager.add(verifiedRole);
+                    console.log(`role added successfully`)
+
+                    // Update nickname
+                    const guildMember = member as GuildMember;
+                    let finalReplyText = 'Verified successfully!';
+                    await guildMember.setNickname(nickname)
+                        .catch(() => finalReplyText = 'Verified successfully! Unable to edit nickname.');
+
+                    console.log(finalReplyText);
+                    await interaction.editReply({ content: finalReplyText });
                 }
-
-                // Send verification email to user
-                await sendVerificationEmail(email, verificationCode);
-                await interaction.editReply({ content: 'Email sent!' });
-            } else if (subcommand === 'code') {
-                await interaction.deferReply({ ephemeral: true });
-
-                const code = interaction.options.getString('code', true);
-                const user = await prisma.user.findUnique({ where: { discordId: interaction.user.id } });
-                const userEmail = user?.email ?? '';
-                const expirationDate = user?.codeExpiresAt ? new Date(user.codeExpiresAt) : new Date(0);
-
-                // Begin getting user data from spreadsheet
-                const doc = await loadSpreadsheet(sheetId);
-                const sheet = doc.sheetsByIndex[0];
-                const rows = await sheet.getRows();
-                const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
-                rows.forEach(e => {
-                    const key: string = e.get('Email');
-                    emailTable[key] = e;
-                });
-                if (!(userEmail in emailTable)) {
-                    await interaction.editReply({ content: 'Email not found!' });
-                    return;
-                }
-                const emailRow = emailTable[userEmail];
-                const nickname = `${emailRow.get('First Name')} ${emailRow.get('Last Name')}`;
-
-
-                if (!user || user.verificationCode !== code || expirationDate < new Date()) {
-                    // Invalid code, respond with error message
-                    await interaction.editReply({ content: 'Invalid or expired code!' });
-                    return;
-                }
-
-                // Update user verification status
-                await prisma.user.update({
-                    where: { discordId: interaction.user.id },
-                    data: { verified: true }
-                });
-
-                // Assign verified role
-                const guild = interaction.guild;
-                const member = interaction.member;
-
-                if (!guild || !member) {
-                    await interaction.editReply({ content: 'Guild not found' });
-                    return;
-                }
-
-                const verifiedRole = interaction.guild.roles.cache.find(
-                    (role: Role) => role.name === VerifiedRoleName
-                );
-
-                if (!verifiedRole) {
-                    await interaction.editReply({ content: 'Roles not configured' });
-                    return;
-                }
-
-                const roleManager = member.roles as GuildMemberRoleManager;
-                await roleManager.add(verifiedRole);
-
-                // Update nickname
-                const guildMember = member as GuildMember;
-                let finalReplyText = 'Verified successfully!';
-                await guildMember.setNickname(nickname).catch(() => finalReplyText = 'Verified successfully! Unable to edit nickname.');
-
-                await interaction.editReply({ content: finalReplyText });
+            } catch(err) {
+                console.log(err);
             }
         },
         cooldown: 10,
