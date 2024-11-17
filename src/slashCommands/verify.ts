@@ -159,16 +159,19 @@ const VerifyCommand: SlashCommand = {
                         await interaction.editReply({ content: 'Roles not configured' });
                         return;
                     }
+
+                    let finalReplyText = 'Verified successfully!';
                     console.log(`attempting to assign verified role to user..`);
                     const roleManager = member.roles as GuildMemberRoleManager;
-                    await roleManager.add(verifiedRole);
+                    await roleManager.add(verifiedRole)
+                        .catch(() => finalReplyText += ' Unable to assign role.');
                     console.log(`role added successfully`)
 
                     // Update nickname
                     const guildMember = member as GuildMember;
-                    let finalReplyText = 'Verified successfully!';
+                    
                     await guildMember.setNickname(nickname)
-                        .catch(() => finalReplyText = 'Verified successfully! Unable to edit nickname.');
+                        .catch(() => finalReplyText += ' Unable to edit nickname.');
 
                     console.log(finalReplyText);
                     await interaction.editReply({ content: finalReplyText });
