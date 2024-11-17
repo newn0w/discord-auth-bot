@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node --unhandled-rejections=warn --trace-warnings build/index.js",
-    "prod": "nohup node --unhandled-rejections=warn build/index.js > bot.log 2>&1 &"
+    "prod": "nohup node --unhandled-rejections=warn --trace-warnings build/index.js > log/bot_$(date +\"%Y%m%d_%H%M%S\").log 2>&1 &"
   },
   "keywords": [],
   "author": "NoBody",
