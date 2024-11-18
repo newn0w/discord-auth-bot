@@ -12,7 +12,7 @@ import { VerifiedRoleName } from "../constants/roles";
 import { loadSpreadsheet } from "../utils/loadSpreadsheet"
 import { GoogleSpreadsheetRow } from "google-spreadsheet";
 import spreadsheetHeaders from "../constants/spreadsheetHeaders.json";
-import {createRole} from "../utils/createRole";
+import { createRole } from "../utils/createRole";
 
 const prisma = new PrismaClient;
 const sheetId: string = process.env.SHEET_ID!;
@@ -121,7 +121,6 @@ const VerifyCommand: SlashCommand = {
                     const rows = await sheet.getRows();
                     const headers = sheet.headerValues;
                     const newHeaders = headers.filter(header => !(header in spreadsheetHeaders));
-                    console.log(newHeaders);
                     const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
                     rows.forEach(e => {
                         const key: string = e.get('Email');
@@ -133,7 +132,6 @@ const VerifyCommand: SlashCommand = {
                     }
                     const emailRow = emailTable[userEmail];
                     const nickname = `${emailRow.get('First Name')} ${emailRow.get('Last Name')}`;
-
 
                     if (!user || user.verificationCode !== code || expirationDate < new Date()) {
                         // Invalid code, respond with error message
@@ -176,14 +174,18 @@ const VerifyCommand: SlashCommand = {
                     newHeaders.forEach(header => {
                         const headerValue = emailRow.get(header);
                         if (headerValue) {
-                            const roleName = headerValue.toString();
+                            const roleName = header;
                             const role = interaction.guild?.roles.cache.find(role => role.name === roleName);
+                            console.log(`Attempting to assign ${roleName} role to user..`);
                             if (!role) {
                                 createRole(interaction.guild!, roleName)
                                     .then(newRole => roleManager.add(newRole))
+                                    .then(() => console.log(`Role ${roleName} added successfully`))
                                     .catch(error => console.error(`Error creating/assigning role: ${roleName}`, error));
                             } else {
-                                roleManager.add(role);
+                                roleManager.add(role)
+                                    .then(() => console.log(`Role ${roleName} added successfully`))
+                                    .catch(error => console.error(`Error creating/assigning role: ${roleName}`, error));
                             }
                         }
                     });
