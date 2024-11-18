@@ -10,7 +10,6 @@ module.exports = (client: Client) => {
   const commands: Command[] = [];
 
   let slashCommandsDir = join(__dirname, "../slashCommands");
-  let commandsDir = join(__dirname, "../commands");
 
   readdirSync(slashCommandsDir).forEach((file) => {
     if (!file.endsWith(".js")) return;
@@ -18,14 +17,6 @@ module.exports = (client: Client) => {
     if (!command.enable) return;
     slashCommands.push(command.command);
     client.slashCommands.set(command.command.name, command);
-  });
-
-  readdirSync(commandsDir).forEach((file) => {
-    if (!file.endsWith(".js")) return;
-    let command: Command = require(`${commandsDir}/${file}`).default;
-    if (!command.enable) return;
-    commands.push(command);
-    client.commands.set(command.name, command);
   });
 
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
