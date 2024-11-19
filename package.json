@@ -1,16 +1,16 @@
 {
-  "name": "discord-js-v14-handler-ts",
+  "name": "discord-auth-bot",
   "version": "1.0.0",
-  "description": "Handler Template Using Discord.js-v14 an TS",
-  "main": "index.js",
+  "description": "Discord authorization bot with Google Sheets and email.",
+  "main": "build/index.js",
   "scripts": {
     "start": "node --unhandled-rejections=warn --trace-warnings build/index.js",
     "prod": "nohup node --unhandled-rejections=warn --trace-warnings build/index.js > log/bot_$(date +\"%Y%m%d_%H%M%S\").log 2>&1 &",
     "dev": "nodemon --unhandled-rejections=warn --trace-warnings build/index.js"
   },
   "keywords": [],
-  "author": "NoBody",
-  "license": "ISC",
+  "author": "newn0w/bravedown",
+  "license": "MIT",
   "dependencies": {
     "@discordjs/rest": "^1.1.0",
     "@prisma/client": "^5.22.0",
