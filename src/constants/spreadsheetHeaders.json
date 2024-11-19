@@ -1,7 +1,7 @@
 {
- "First Name": true,
- "Last Name": true,
- "Main Location": true,
- "Email": true,
- "Mobile": true
+  "First Name": true,
+  "Last Name": true,
+  "Main Location": true,
+  "Email": true,
+  "Mobile": true
 }
