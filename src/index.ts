@@ -51,68 +51,8 @@ readdirSync(handlersDir).forEach(handler => {
     require(`${handlersDir}/${handler}`)(client)
 })
 
-// Attempt to create the landing channel upon bot startup
-client.on('ready', async () => {
-    const guilds = client.guilds.cache.values();
-
-    for (const guild of guilds) {
-        const landingChannel = await createLandingChannel(guild);
-        await createVerifiedRole(guild);
-        if (landingChannel) {
-            await landingChannel.send("Welcome to the server!");
-        }
-    }
-
-});
-
-client.on('messageCreate', (message: Message) => {
-    const guildId = message.guildId;
-
-    if (!guildId) {
-        return;
-    }
-
-    const guild = client.guilds.cache.get(guildId)!;
-
-    const landingChannel = guild.channels.cache.find(
-        channel => channel.name === 'verify-here'
-    ) as TextChannel;
-
-    if (landingChannel && message.channelId === landingChannel.id) {
-        const member = guild.members.cache.get(message.author.id);
-        if (member && !member.permissions.has('Administrator')) {
-            message.delete().catch((error) => {
-                console.error('Failed to delete message:', error);
-            });
-        }
-    }
-});
-
 client.login(process.env.TOKEN)
 
-async function createVerifiedRole(guild: Guild) {
-    let verifiedRole = guild.roles.cache.find(
-        (role: Role) => role.name === VerifiedRoleName
-    );
-
-    if (!verifiedRole) {
-        verifiedRole = await guild.roles.create({
-            name: VerifiedRoleName,
-            color: '#00FF00',
-            permissions: ['ViewChannel', 'SendMessages'],
-        });
-    }
-
-    // Deny view access to landing channel
-    const landingChannel = guild.channels.cache.find(
-        channel => channel.name === 'verify-here'
-    ) as TextChannel;
-    if (landingChannel) {
-        await landingChannel.permissionOverwrites.edit(verifiedRole.id, {
-            ViewChannel: false,
-        });
-    }
-}
 /*
 ╔═════════════════════════════════════════════════════╗
 ║    || - ||   Developed by NoBody#9666   || - ||     ║

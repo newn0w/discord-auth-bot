@@ -17,7 +17,7 @@ export const createLandingChannel = async (guild: Guild): Promise<TextChannel | 
         return null;
     }
 
-// If the channel does not exist, create a new one
+    // If the channel does not exist, create a new one
     try {
         const newChannel = await guild.channels.create({
             name: LANDING_CHANNEL_NAME,
@@ -28,6 +28,7 @@ export const createLandingChannel = async (guild: Guild): Promise<TextChannel | 
                 {
                     id: guild.id,
                     allow: [PermissionsBitField.Flags.ViewChannel], // TODO: Give access to "verified" role
+                    deny: [PermissionsBitField.Flags.SendMessages]
                 },
             ],
         });
