@@ -39,7 +39,7 @@ export const createLandingChannel = async (guild: Guild): Promise<TextChannel | 
 
     // If channel already exists, clear any pre-existing messages and return the existing channel
     const existingMessages = await existingChannel.messages.fetch({ limit: 100 });
-    // await existingChannel.bulkDelete(existingMessages); TODO: Ask Dave if this msgs will never be >2wks old
+    // await existingChannel.bulkDelete(existingMessages); TODO: May be better if messages are never older than 2wks
     for (const message of existingMessages.values()) {
         message.delete();
     }
