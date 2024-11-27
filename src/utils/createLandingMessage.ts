@@ -75,7 +75,7 @@ export const createLandingMessage = async (landingChannel: TextChannel) => {
                 filter
             });
 
-            const email = modalSubmission.fields.getTextInputValue('email_input');
+            const email = modalSubmission.fields.getTextInputValue('email_input').toLowerCase();
             console.log(`verify email ${email} submitted.`)
 
             // Email format validation regex
@@ -93,7 +93,7 @@ export const createLandingMessage = async (landingChannel: TextChannel) => {
             console.log(`spreadsheet loaded`);
             const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
             rows.forEach(e => {
-                const key: string = e.get('Email');
+                const key: string = e.get('Email').toLowerCase();
                 emailTable[key] = e;
             });
             if (!(email in emailTable)) {
@@ -169,7 +169,7 @@ export const createLandingMessage = async (landingChannel: TextChannel) => {
             const userEmail = user?.email ?? '';
             const expirationDate = user?.codeExpiresAt ? new Date(user.codeExpiresAt) : new Date(0);
 
-            // Begin getting user data from spreadsheet
+            // Begin getting user data and header data from spreadsheet
             const doc = await loadSpreadsheet(sheetId);
             const sheet = doc.sheetsByIndex[0];
             const rows = await sheet.getRows();
@@ -177,7 +177,7 @@ export const createLandingMessage = async (landingChannel: TextChannel) => {
             const roleHeaders = headers.filter(header => !(header in spreadsheetHeaders));
             const emailTable: { [key: string]: GoogleSpreadsheetRow<Record<string, any>> } = {};
             rows.forEach(e => {
-                const key: string = e.get('Email');
+                const key: string = e.get('Email').toLowerCase();
                 emailTable[key] = e;
             });
             if (!(userEmail in emailTable)) {
