@@ -26,7 +26,7 @@ export const verifyEmail = async (modalSubmission: ModalSubmitInteraction, inter
         if (!emailRegex.test(email)) {
             // Invalid email format, respond with error message
             console.log(`email ${email} was found to have invalid formatting`)
-            await modalSubmission.reply({content: 'Invalid email format!', ephemeral: true});
+            await modalSubmission.followUp({content: 'Invalid email format!', ephemeral: true});
             return;
         }
 
@@ -41,7 +41,7 @@ export const verifyEmail = async (modalSubmission: ModalSubmitInteraction, inter
         });
         if (!(email in emailTable)) {
             console.log(`email ${email} not found in email table`);
-            await modalSubmission.reply({content: 'Email not found!', ephemeral: true});
+            await modalSubmission.followUp({content: 'Email not found!', ephemeral: true});
             return;
         }
 
@@ -76,7 +76,7 @@ export const verifyEmail = async (modalSubmission: ModalSubmitInteraction, inter
 
         // Send verification email to user
         await sendVerificationEmail(email, verificationCode);
-        await modalSubmission.reply({content: 'Email sent!', ephemeral: true});
+        await modalSubmission.followUp({content: 'Email sent!', ephemeral: true});
     } catch (error) {
         console.error('Error during email verification:', error);
         await interaction.followUp({
@@ -108,7 +108,7 @@ export const verifyCode = async (modalSubmission: ModalSubmitInteraction, intera
         });
         if (!(userEmail in emailTable)) {
             console.log(emailTable);
-            await modalSubmission.reply({content: 'Email not found!', ephemeral: true});
+            await modalSubmission.followUp({content: 'Email not found!', ephemeral: true});
             return;
         }
         const emailRow = emailTable[userEmail];
@@ -116,7 +116,7 @@ export const verifyCode = async (modalSubmission: ModalSubmitInteraction, intera
 
         if (!user || user.verificationCode !== code || expirationDate < new Date()) {
             // Invalid code, respond with error message
-            await modalSubmission.reply({content: 'Invalid or expired code!', ephemeral: true});
+            await modalSubmission.followUp({content: 'Invalid or expired code!', ephemeral: true});
             return;
         }
 
@@ -131,7 +131,7 @@ export const verifyCode = async (modalSubmission: ModalSubmitInteraction, intera
         const member = interaction.member;
 
         if (!guild || !member) {
-            await modalSubmission.reply({content: 'Guild not found', ephemeral: true});
+            await modalSubmission.followUp({content: 'Guild not found', ephemeral: true});
             return;
         }
 
@@ -140,7 +140,7 @@ export const verifyCode = async (modalSubmission: ModalSubmitInteraction, intera
         );
 
         if (!verifiedRole) {
-            await modalSubmission.reply({content: 'Roles not configured', ephemeral: true});
+            await modalSubmission.followUp({content: 'Roles not configured', ephemeral: true});
             return;
         }
 
@@ -179,7 +179,7 @@ export const verifyCode = async (modalSubmission: ModalSubmitInteraction, intera
             .catch(() => finalReplyText += ' Unable to edit nickname.');
 
         console.log(finalReplyText);
-        await modalSubmission.reply({content: finalReplyText, ephemeral: true});
+        await modalSubmission.followUp({content: finalReplyText, ephemeral: true});
     } catch (error) {
         console.error('Error during code verification:', error);
         await interaction.followUp({
