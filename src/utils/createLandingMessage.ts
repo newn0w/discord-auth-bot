@@ -108,6 +108,8 @@ export const createLandingMessage = async (landingChannel: TextChannel) => {
                     filter
                 });
 
+                modalSubmission.deferReply({ ephemeral: true });
+
                 await verifyCode(modalSubmission, interaction);
         } catch (error) {
                 if (error.message.includes('time')) {
