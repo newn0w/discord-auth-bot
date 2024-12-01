@@ -104,7 +104,7 @@ export const createLandingMessage = async (landingChannel: TextChannel) => {
 
             try {
                 const modalSubmission = await interaction.awaitModalSubmit({
-                    time: 60000,
+                    time: 300000, // 5 minute timeout
                     filter
                 });
 
