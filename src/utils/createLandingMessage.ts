@@ -60,7 +60,7 @@ export const createLandingMessage = async (landingChannel: TextChannel) => {
                     i.isModalSubmit() && i.customId === 'email_modal' && i.user.id === interaction.user.id;
 
                 const modalSubmission = await interaction.awaitModalSubmit({
-                    time: 60000,
+                    time: 300000, // 5 minute timeout
                     filter
                 });
 
