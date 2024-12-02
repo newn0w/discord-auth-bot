@@ -11,6 +11,9 @@ import {
 } from 'discord.js';
 import { verifyEmail, verifyCode } from "./userVerification";
 
+const landingMessageContent = process.env.LANDING_MESSAGE;
+if (!landingMessageContent) console.error('Please set a message for the landing channel!');
+
 export const createLandingMessage = async (landingChannel: TextChannel) => {
     const verifyEmailButton = new ButtonBuilder()
         .setCustomId('verify-email')
@@ -26,7 +29,7 @@ export const createLandingMessage = async (landingChannel: TextChannel) => {
         .addComponents(verifyEmailButton, verifyCodeButton);
 
     const landingMessage = await landingChannel.send({
-        content: 'Welcome to the server!',
+        content: landingMessageContent,
         components: [row],
     });
 
