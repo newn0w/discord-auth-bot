@@ -59,7 +59,9 @@ const AnnounceCommand: SlashCommand = {
 
             await currentChannel.send(announcementMessage);
             await announcementModalSubmission.reply({ content: 'Announcement made!', ephemeral: true });
-            await announcementModalSubmission.deleteReply();
+            setTimeout(async () => {
+                await announcementModalSubmission.deleteReply();
+            }, 3000);
         } catch (error) {
             if (error.message.includes('time')) {
                 console.log(`Modal timed out for user ${interaction.user.id}`);
